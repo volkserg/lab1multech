@@ -29,9 +29,20 @@ class Image:
                 self.pixels.append([int(element) for element in current_row])
 
         if self.type == 'P3':
+            r = []
+            g = []
+            b = []
             for i in rows:
                 current_row = i.split(' ')
-                self.pixels.append([int(element) for element in current_row])
+                for j in range(0, len(current_row), 3):
+                    r.append(int(current_row[j]))
+                for j in range(1, len(current_row), 3):
+                    g.append(int(current_row[j]))
+                for j in range(2, len(current_row), 3):
+                    b.append(int(current_row[j]))
+            self.pixels.append(r)
+            self.pixels.append(g)
+            self.pixels.append(b)
 
 
     def save_image(self, filename):
@@ -46,12 +57,12 @@ class Image:
                     f.write("\n")
 
     def rle(self):
-        if self.type == 'P2' or self.type == 'P3':
-            return self.compressor.rle(self.pixels)
+        if self.type == 'P2':
+            return self.compressor.rleP2(self.pixels)
 
     def huffman(self):
-        if self.type == 'P2' or self.type == 'P3':
-            return self.compressor.huffman(self.pixels)
+        if self.type == 'P2':
+            return self.compressor.huffmanP2(self.pixels)
 
 
 class Node(namedtuple("Node", ["left", "right"])):
@@ -70,7 +81,7 @@ class Compressor:
     def __init__(self):
         pass
 
-    def rle(self, pixels):
+    def rleP2(self, pixels):
         res = []
         prev = ''
         count = 1
@@ -88,7 +99,7 @@ class Compressor:
             res.append((prev, count))
         return res
 
-    def huffman(self, pixels):
+    def huffmanP2(self, pixels):
         string = []
         for i in pixels:
             for j in i:
@@ -108,15 +119,3 @@ class Compressor:
         code = {}
         root.walk(code, "")
         return "".join(code[ch] for ch in string)
-
-    def lz77(self, pixels):
-        res = []
-        buffer = 10
-        string = []
-        for i in pixels:
-            for j in i:
-                string.append(j)
-        max_len = len(string)
-        for i in range(max_len):
-            pass
-        return res
