@@ -137,7 +137,6 @@ class Compressor:
             freq2, _count2, right = heapq.heappop(h)
             heapq.heappush(h, (freq1 + freq2, count, Node(left, right)))
             count += 1
-
         [(_freq, _count, root)] = h
         code = {}
         root.walk(code, "")
