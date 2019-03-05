@@ -1,6 +1,7 @@
 from collections import Counter, namedtuple
 import heapq
 
+
 class Image:
 
     def __init__(self, filename):
@@ -13,11 +14,10 @@ class Image:
             self.width = int(rows[0].split(' ')[0])
             self.height = int(rows[0].split(' ')[1])
             rows.pop(0)
-            self.smth = rows[0]
+            self.intens = rows[0]
             rows.pop(0)
             self.get_pixels(rows)
             self.compressor = Compressor()
-
 
     def get_pixels(self, rows):
         if self.type=='P2':
@@ -46,16 +46,30 @@ class Image:
             self.pixels['g'] = g
             self.pixels['b'] = b
 
-
     def save_image(self, filename):
         with open (filename, 'w') as f:
             if self.type == 'P2':
                 f.write('P2\n')
                 f.write(str(self.width) + ' ' + str(self.height) + "\n")
-                f.write(str(255) + "\n")
-                for i in self.pixels:
-                    for j in i:
-                        f.write(str(j) + " ")
+                f.write(str(self.intens) + "\n")
+                pixel = 0
+                for i in range(self.height):
+                    for j in range(self.width):
+                        f.write(str(self.pixels[pixel]) + " ")
+                        pixel += 1
+                    f.write("\n")
+
+            if self.type == 'P3':
+                f.write('P3\n')
+                f.write(str(self.width) + ' ' + str(self.height) + "\n")
+                f.write(str(self.intens) + "\n")
+                pixel = 0
+                for i in range(self.height):
+                    for j in range(self.width):
+                        f.write(str(self.pixels['r'][pixel]) + " ")
+                        f.write(str(self.pixels['g'][pixel]) + " ")
+                        f.write(str(self.pixels['b'][pixel]) + " ")
+                        pixel += 1
                     f.write("\n")
 
     def rle(self):
@@ -63,10 +77,9 @@ class Image:
             return self.compressor.rle(self.pixels)
 
         if self.type == 'P3':
-            channels = {}
-            channels['r'] = self.compressor.rle(self.pixels['r'])
-            channels['g'] = self.compressor.rle(self.pixels['g'])
-            channels['b'] = self.compressor.rle(self.pixels['b'])
+            channels = {'r': self.compressor.rle(self.pixels['r']),
+                        'g': self.compressor.rle(self.pixels['g']),
+                        'b': self.compressor.rle(self.pixels['b'])}
             return channels
 
     def huffman(self):
@@ -74,10 +87,9 @@ class Image:
             return self.compressor.huffman(self.pixels)
 
         if self.type == 'P3':
-            channels = {}
-            channels['r'] = self.compressor.huffman(self.pixels['r'])
-            channels['g'] = self.compressor.huffman(self.pixels['g'])
-            channels['b'] = self.compressor.huffman(self.pixels['b'])
+            channels = {'r': self.compressor.huffman(self.pixels['r']),
+                        'g': self.compressor.huffman(self.pixels['g']),
+                        'b': self.compressor.huffman(self.pixels['b'])}
             return channels
 
 
@@ -129,7 +141,6 @@ class Compressor:
         [(_freq, _count, root)] = h
         code = {}
         root.walk(code, "")
-        res = {}
-        res['dict'] = code
-        res['content'] = "".join(code[ch] for ch in pixels)
+        res = {'dict': code,
+               'content': "".join(code[ch] for ch in pixels)}
         return res
