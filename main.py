@@ -20,15 +20,17 @@ class Image:
 
 
     def get_pixels(self, rows):
-        self.pixels = []
         if self.type=='P2':
+            self.pixels = []
             for i in rows:
                 current_row = i.split(' ')
                 if current_row[len(current_row)-1] == '':
                     current_row.pop()
-                self.pixels.append([int(element) for element in current_row])
+                for j in current_row:
+                    self.pixels.append(int(j))
 
         if self.type == 'P3':
+            self.pixels = {}
             r = []
             g = []
             b = []
@@ -40,9 +42,9 @@ class Image:
                     g.append(int(current_row[j]))
                 for j in range(2, len(current_row), 3):
                     b.append(int(current_row[j]))
-            self.pixels.append(r)
-            self.pixels.append(g)
-            self.pixels.append(b)
+            self.pixels['r'] = r
+            self.pixels['g'] = g
+            self.pixels['b'] = b
 
 
     def save_image(self, filename):
@@ -58,11 +60,25 @@ class Image:
 
     def rle(self):
         if self.type == 'P2':
-            return self.compressor.rleP2(self.pixels)
+            return self.compressor.rle(self.pixels)
+
+        if self.type == 'P3':
+            channels = {}
+            channels['r'] = self.compressor.rle(self.pixels['r'])
+            channels['g'] = self.compressor.rle(self.pixels['g'])
+            channels['b'] = self.compressor.rle(self.pixels['b'])
+            return channels
 
     def huffman(self):
         if self.type == 'P2':
-            return self.compressor.huffmanP2(self.pixels)
+            return self.compressor.huffman(self.pixels)
+
+        if self.type == 'P3':
+            channels = {}
+            channels['r'] = self.compressor.huffman(self.pixels['r'])
+            channels['g'] = self.compressor.huffman(self.pixels['g'])
+            channels['b'] = self.compressor.huffman(self.pixels['b'])
+            return channels
 
 
 class Node(namedtuple("Node", ["left", "right"])):
@@ -81,31 +97,26 @@ class Compressor:
     def __init__(self):
         pass
 
-    def rleP2(self, pixels):
+    def rle(self, pixels):
         res = []
         prev = ''
         count = 1
-        for i in pixels:
-            for j in i:
-                if prev == '':
-                    prev = j
-                elif prev == j:
-                    count += 1
-                else:
-                    res.append((prev, count))
-                    prev = j
-                    count = 1
+        for j in pixels:
+            if prev == '':
+                prev = j
+            elif prev == j:
+                count += 1
+            else:
+                res.append((prev, count))
+                prev = j
+                count = 1
         if count != 1:
             res.append((prev, count))
         return res
 
-    def huffmanP2(self, pixels):
-        string = []
-        for i in pixels:
-            for j in i:
-                string.append(j)
+    def huffman(self, pixels):
         h = []
-        for ch, freq in Counter(string).items():
+        for ch, freq in Counter(pixels).items():
             h.append((freq, len(h), Leaf(ch)))
         heapq.heapify(h)
         count = 0
@@ -118,4 +129,7 @@ class Compressor:
         [(_freq, _count, root)] = h
         code = {}
         root.walk(code, "")
-        return "".join(code[ch] for ch in string)
+        res = {}
+        res['dict'] = code
+        res['content'] = "".join(code[ch] for ch in pixels)
+        return res
